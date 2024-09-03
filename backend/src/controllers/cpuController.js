@@ -1,18 +1,43 @@
-const CPU = require('../models/CPU');
+const ALU = require('../models/ALU');
 const Memory = require('../models/Memory');
 
-let cpu = new CPU();
-let memory = new Memory();
+class CPU {
+    constructor() {
+        this.registers = {
+            accumulator: 0,
+            programCounter: 0,
+            // Otros registros...
+        };
+        this.memory = new Memory();
+    }
 
-const loadProgram = (req, res) => {
-  const program = req.body.program;
-  memory.loadProgram(program);
-  res.json({ message: 'Program loaded', memory: memory.state });
-};
+    fetch() {
+        const instruction = this.memory.get(this.registers.programCounter);
+        this.registers.programCounter++;
+        return instruction;
+    }
 
-const executeStep = (req, res) => {
-  cpu.execute(memory);
-  res.json({ cpu: cpu.state, memory: memory.state });
-};
+    decode(instruction) {
+        // Decodifica la instrucción en operación y operandos...
+    }
 
-module.exports = { loadProgram, executeStep };
+    execute(operation, operand1, operand2) {
+        switch(operation) {
+            case 'ADD':
+                this.registers.accumulator = ALU.add(operand1, operand2);
+                break;
+            case 'SUB':
+                this.registers.accumulator = ALU.subtract(operand1, operand2);
+                break;
+            // Otras operaciones...
+        }
+    }
+
+    runCycle() {
+        const instruction = this.fetch();
+        const { operation, operand1, operand2 } = this.decode(instruction);
+        this.execute(operation, operand1, operand2);
+    }
+}
+
+module.exports = CPU;
