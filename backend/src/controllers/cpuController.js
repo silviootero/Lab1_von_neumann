@@ -81,6 +81,11 @@ class CPU {
 
     }
 
+    //Se guarda el dato del acumulador en la memoria
+    store(){
+        this.memory.set(this.registers.addresRegister, this.registers.accumulator)
+    }
+
     //Se ejecutan las operaciones, en el caso de las sumas o restas, el valor del acumulador se suma o resta al valor del número de registro de entrada
     execute(operation) {
         switch(operation) {
@@ -91,9 +96,12 @@ class CPU {
                 this.registers.accumulator = ALU.subtract(this.registers.accumulator, this.registers.inRegister);
                 break;
             case 'MOVE':
-                
+                this.store();
+                break;
+            case 'FINISH':
+                this.isOperating = false;
+                break;
 
-            // Otras operaciones...
         }
     }
 
