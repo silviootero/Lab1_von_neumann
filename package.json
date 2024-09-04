@@ -1,0 +1,11 @@
+{
+    "name": "von-neumann-simulator",
+    "version": "1.0.0",
+    "scripts": {
+      "start": "concurrently \"npm run start --prefix backend\" \"npm run start --prefix frontend\""
+    },
+    "devDependencies": {
+      "concurrently": "^7.0.0"
+    }
+  }
+  
