@@ -1,6 +1,7 @@
 const ALU = require('../models/ALU');
 const Memory = require('../models/Memory');
 
+
 class CPU {
     constructor() {
         //Se crean todos los registros con los que se trabajará
@@ -15,6 +16,7 @@ class CPU {
         };
         this.memory = new Memory();
         this.isOperating = true;
+        
     }
     //EL registro de direcciones recibe la dirección y se hace el aumento del contador de programa
     getAddress(){
@@ -33,9 +35,6 @@ class CPU {
     getData(instruction){
         this.registers.dataRegister = instruction;
     }
-
-    //Para determinar hacia dónde irá el dato(dependiendo de si es una instrucción o un dato) se pondrá una condición que dependa de si el registro de direcciones es menor o igual a un número enviado desde el front
-    //De esta forma, al escoger el tipo de operación, se determinará en dónde se encuentran las operaciones en la memoria
 
     //El registro de instrucción recibe la instrucción que se guardó en el registro de datos
     getInstruction(){
@@ -70,9 +69,10 @@ class CPU {
 
         // Devolver un objeto con ambos valores
         return {
-            address: address,
+            address: parseInt(address, 2),  // Convertir la dirección de binario a número decimal
             operation: operation
         };
+    
     }
 
     //Se recibe la dirección del dato que se obtiene al ejecutar decode y se envía al registro de direcciones
@@ -95,21 +95,61 @@ class CPU {
             case 'SUB':
                 this.registers.accumulator = ALU.subtract(this.registers.accumulator, this.registers.inRegister);
                 break;
-            case 'MOVE':
-                this.store();
-                break;
-            case 'FINISH':
-                this.isOperating = false;
-                break;
-
         }
     }
 
 
+    // Ciclo principal de ejecución
     runCycle() {
-        const instruction = this.fetch();
-        const { operation, operand1, operand2 } = this.decode(instruction);
-        this.execute(operation, operand1, operand2);
+        
+        if (!this.isOperating) return;
+
+        // Obtener la dirección de la siguiente instrucción
+        this.getAddress();
+
+        // Obtener la instrucción desde la memoria
+        let instruction = this.fetch();
+
+        //Se envía la instrucción al registro de datos
+        this.getData(instruction);
+
+        // Guardar la instrucción en el registro de instrucciones
+        this.getInstruction();
+
+        // Decodificar la instrucción
+        let { operation, address } = this.decode();
+
+        //En caso de instrucción finalizar, se termina el proceso
+        if(operation == 'FINISH'){
+
+            this.isOperating = false;
+            return;
+        }
+
+        //En caso de instrucción de mover a la memoria se ejecutan los pasos para que suceda
+        if(operation == 'MOVE'){
+
+            this.getRegisterData(address)  //Se envía la dirección en la que se guardará el dato al registro de direcciones
+            this.store(); //Se guarda el dato
+            return;
+
+        }
+        
+
+        //Se envía al registro de direcciones la dirección que se buscará en la memoria
+        this.getRegisterData(address); 
+
+        //Se obtiene el dato de la memoria
+        let dato = this.fetch();
+
+        //Se manda el dato a al registro de datos
+        this.getData(dato);
+
+        //Se envía el dato desde el registro de datos al registro de entrada
+        this.getInData();
+
+        //Se ejecuta la operación especificada
+        this.execute(operation);
     }
 }
 
