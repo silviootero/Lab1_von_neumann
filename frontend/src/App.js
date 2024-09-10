@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 function App() {
   const [cpuState, setCpuState] = useState({});
   const [memory, setMemory] = useState([]);  // Inicializar memory como un array vacío
-  const [operation, setOperation] = useState('Suma');
+  const [operation, setOperation] = useState(null);
   const [dato1, setDato1] = useState(0);
   const [dato2, setDato2] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
@@ -15,9 +15,20 @@ function App() {
       setCpuState(data.registers);
       setMemory(data.memory || []);  // Asegurar que memory sea un array
       setIsFinished(data.finished);
+      setOperation(data.operation);
     } catch (error) {
       console.error('Error fetching CPU state:', error);
     }
+  };
+
+  const pauseCycle = async () => {
+    await fetch('http://localhost:3001/api/pause-cycle', { method: 'POST' });
+    console.log('Ciclo pausado');
+  };
+
+  const resumeCycle = async () => {
+    await fetch('http://localhost:3001/api/resume-cycle', { method: 'POST' });
+    console.log('Ciclo reanudado');
   };
 
   // Enviar la operación seleccionada y los datos al backend para llenar la memoria
@@ -78,10 +89,15 @@ function App() {
         </div>
         <button onClick={fillMemory}>Llenar Memoria</button>
       </div>
-
+      <div>
+        <button onClick={() => fetchCpuState('run-cycle')}>Iniciar Ciclo</button>
+        <button onClick={pauseCycle}>Pausar Ciclo</button>
+        <button onClick={resumeCycle}>Reanudar Ciclo</button>
+      </div>
       <div>
         <h3>Estado de la CPU</h3>
         <pre>{JSON.stringify(cpuState, null, 2)}</pre>
+        <p>{operation ? `Operación actual: ${operation}` : 'No hay operación'}</p>
       </div>
 
       <div>

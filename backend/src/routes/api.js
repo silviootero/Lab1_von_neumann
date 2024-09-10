@@ -16,6 +16,18 @@ router.get('/run-cycle', (req, res) => {
     });
 });
 
+// Ruta para pausar el ciclo
+router.post('/pause-cycle', (req, res) => {
+    cpu.pause();
+    res.status(200).json({ message: 'Ciclo pausado' });
+});
+
+// Ruta para reanudar el ciclo
+router.post('/resume-cycle', (req, res) => {
+    cpu.resume();
+    res.status(200).json({ message: 'Ciclo reanudado' });
+});
+
 // Ruta para llenar la memoria con los datos enviados desde el frontend
 router.post('/fill-memory', (req, res) => {
     const { operation, dato1, dato2 } = req.body;

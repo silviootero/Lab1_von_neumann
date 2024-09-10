@@ -16,8 +16,30 @@ class CPU {
         };
         this.memory = new Memory();
         this.isOperating = true;
+        this.paused = false;  // Estado de pausa
         
     }
+    // Método para pausar la CPU
+    pause() {
+        this.paused = true;
+    }
+
+    // Método para reanudar la CPU
+    resume() {
+        this.paused = false;
+        this.runCycle(this.updateCallback);  // Continuar el ciclo
+    }
+
+    // Verificar si la CPU está pausada
+    checkPaused(updateCallback) {
+        if (this.paused) {
+            updateCallback(this.registers, null, false);  // Enviar actualización indicando que está pausada
+            return true;  // Pausada
+        }
+        return false;  // No está pausada
+    }
+
+
     //EL registro de direcciones recibe la dirección y se hace el aumento del contador de programa
     getAddress(){
         this.registers.addresRegister = this.registers.programCounter,
@@ -102,42 +124,56 @@ class CPU {
     // Ciclo principal de ejecución
     runCycle(updateCallback) {
         
-        if (!this.isOperating){
-            updateCallback(this.registers, null, true);
+        this.updateCallback = updateCallback;  // Guardar el callback
+
+        if (!this.isOperating) {
+            updateCallback(this.registers, null, true);  // No continuar si está pausada o terminada
             return;
         }
 
+        if (this.checkPaused(updateCallback)) return;
         // Obtener la dirección de la siguiente instrucción
         this.getAddress();
         updateCallback(this.registers, null, false);
 
+
+        if (this.checkPaused(updateCallback)) return;
         // Obtener la instrucción desde la memoria
         let instruction = this.fetch();
 
+
+        if (this.checkPaused(updateCallback)) return;
         //Se envía la instrucción al registro de datos
         this.getData(instruction);
         updateCallback(this.registers, null, false);
 
+
+        if (this.checkPaused(updateCallback)) return;
         // Guardar la instrucción en el registro de instrucciones
         this.getInstruction();
         updateCallback(this.registers, null, false);
 
+        if (this.checkPaused(updateCallback)) return;
         // Decodificar la instrucción
         let { operation, address } = this.decode();
 
         //En caso de instrucción finalizar, se termina el proceso
         if(operation == 'FINISH'){
 
+            if (this.checkPaused(updateCallback)) return;
             this.isOperating = false;
-            updateCallback(this.registers, operation, true);
+            updateCallback(this.registers, operation, true);  // Enviar actualización final
             return;
         }
 
         //En caso de instrucción de mover a la memoria se ejecutan los pasos para que suceda
         if(operation == 'MOVE'){
 
+            if (this.checkPaused(updateCallback)) return;
             this.getRegisterData(address)  //Se envía la dirección en la que se guardará el dato al registro de direcciones
             updateCallback(this.registers, operation, false);
+
+            if (this.checkPaused(updateCallback)) return;
             this.store(); //Se guarda el dato
             updateCallback(this.registers, operation, false);
             return;
@@ -145,29 +181,40 @@ class CPU {
         }
         
 
+        if (this.checkPaused(updateCallback)) return;
         //Se envía al registro de direcciones la dirección que se buscará en la memoria
         this.getRegisterData(address);
         updateCallback(this.registers, operation, false);
 
+
+        if (this.checkPaused(updateCallback)) return;
         //Se obtiene el dato de la memoria
         let dato = this.fetch();
 
+
+        if (this.checkPaused(updateCallback)) return;
         //Se manda el dato a al registro de datos
         this.getData(dato);
         updateCallback(this.registers, operation, false);
 
+
+        if (this.checkPaused(updateCallback)) return;
         //Se envía el dato desde el registro de datos al registro de entrada
         this.getInData();
         updateCallback(this.registers, operation, false);
 
+
+        if (this.checkPaused(updateCallback)) return;
         //Se ejecuta la operación especificada
         this.execute(operation);
         updateCallback(this.registers, operation, false);
 
 
 
-        // Retrasar el siguiente ciclo
-        setTimeout(() => this.runCycle(updateCallback), 1000); // 1 segundo de retraso entre ciclos
+         // Retrasar el siguiente ciclo si no está pausado
+        if (!this.paused) {
+            setTimeout(() => this.runCycle(updateCallback), 1000);  // 1 segundo de retraso
+        }
     }
 }
 
