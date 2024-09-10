@@ -100,21 +100,27 @@ class CPU {
 
 
     // Ciclo principal de ejecución
-    runCycle() {
+    runCycle(updateCallback) {
         
-        if (!this.isOperating) return;
+        if (!this.isOperating){
+            updateCallback(this.registers, null, true);
+            return;
+        }
 
         // Obtener la dirección de la siguiente instrucción
         this.getAddress();
+        updateCallback(this.registers, null, false);
 
         // Obtener la instrucción desde la memoria
         let instruction = this.fetch();
 
         //Se envía la instrucción al registro de datos
         this.getData(instruction);
+        updateCallback(this.registers, null, false);
 
         // Guardar la instrucción en el registro de instrucciones
         this.getInstruction();
+        updateCallback(this.registers, null, false);
 
         // Decodificar la instrucción
         let { operation, address } = this.decode();
@@ -123,6 +129,7 @@ class CPU {
         if(operation == 'FINISH'){
 
             this.isOperating = false;
+            updateCallback(this.registers, operation, true);
             return;
         }
 
@@ -130,26 +137,37 @@ class CPU {
         if(operation == 'MOVE'){
 
             this.getRegisterData(address)  //Se envía la dirección en la que se guardará el dato al registro de direcciones
+            updateCallback(this.registers, operation, false);
             this.store(); //Se guarda el dato
+            updateCallback(this.registers, operation, false);
             return;
 
         }
         
 
         //Se envía al registro de direcciones la dirección que se buscará en la memoria
-        this.getRegisterData(address); 
+        this.getRegisterData(address);
+        updateCallback(this.registers, operation, false);
 
         //Se obtiene el dato de la memoria
         let dato = this.fetch();
 
         //Se manda el dato a al registro de datos
         this.getData(dato);
+        updateCallback(this.registers, operation, false);
 
         //Se envía el dato desde el registro de datos al registro de entrada
         this.getInData();
+        updateCallback(this.registers, operation, false);
 
         //Se ejecuta la operación especificada
         this.execute(operation);
+        updateCallback(this.registers, operation, false);
+
+
+
+        // Retrasar el siguiente ciclo
+        setTimeout(() => this.runCycle(updateCallback), 1000); // 1 segundo de retraso entre ciclos
     }
 }
 
