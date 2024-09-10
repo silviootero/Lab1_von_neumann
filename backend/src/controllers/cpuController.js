@@ -17,6 +17,9 @@ class CPU {
         this.memory = new Memory();
         this.isOperating = true;
         this.paused = false;  // Estado de pausa
+        this.currentStep = 0; // Control del paso actual
+        this.operation = null;     // Instrucción actual
+        this.address = null;       // Dirección actual
         
     }
     // Método para pausar la CPU
@@ -216,6 +219,119 @@ class CPU {
             setTimeout(() => this.runCycle(updateCallback), 1000);  // 1 segundo de retraso
         }
     }
+
+
+    // Método para ejecutar el siguiente paso (paso a paso, subpaso a subpaso)
+    runStepByStep(updateCallback) {
+
+        if (!this.isOperating) {
+            updateCallback(this.registers, null, true);  // Si el ciclo ha terminado, no continuar
+            return;
+        }
+
+        this.updateCallback = updateCallback;  // Guardar el callback
+
+        switch (this.currentStep) {
+            case 0:
+                // Paso 1: Obtener la dirección de la siguiente instrucción
+                this.getAddress();
+                updateCallback(this.registers, null, false);
+                this.currentStep++;
+                break;
+
+            case 1:
+                // Paso 2: Obtener la instrucción desde la memoria
+                let instruction = this.fetch();
+                this.getData(instruction);
+                updateCallback(this.registers, null, false);
+                this.currentStep++;
+                break;
+
+            case 2:
+                // Paso 3: Guardar la instrucción en el registro de instrucciones
+                this.getInstruction();
+                updateCallback(this.registers, null, false);
+                this.currentStep++;
+                break;
+
+            case 3:
+                // Paso 4: Decodificar la instrucción
+                let decoded = this.decode();
+                this.operation = decoded.operation;
+                this.address = decoded.address;
+
+                // Finalizar si la instrucción es FINISH
+                if (this.operation === 'FINISH') {
+                    this.isOperating = false;
+                    updateCallback(this.registers, this.operation, true);  // Enviar actualización final
+                    return;
+                }
+
+                updateCallback(this.registers, this.operation, false);
+                this.currentStep++;
+                break;
+
+            case 4:
+                // Paso 5: Ejecutar MOVE (subpasos del MOVE separados)
+                if (this.operation === 'MOVE') {
+                    // Subpaso 1: Enviar la dirección al registro de direcciones
+                    this.getRegisterData(this.address);
+                    updateCallback(this.registers, this.operation, false);
+                    this.currentStep++;
+                    break;
+                }
+
+                // Si no es MOVE, proceder a la siguiente operación aritmética
+                this.currentStep++;
+                break;
+
+            case 5:
+                // Subpaso 2 del MOVE: Guardar el dato en memoria
+                if (this.operation === 'MOVE') {
+                    this.store();  // Guardar en memoria
+                    updateCallback(this.registers, this.operation, false);
+                    this.currentStep = 0;  // Reiniciar el ciclo para la siguiente instrucción
+                    break;
+                }
+
+                // Si no es MOVE, proceder a la siguiente operación aritmética
+                this.currentStep++;
+                break;
+                  
+            // Pasos en caso de ser un número a operar
+            case 6:
+                //Paso  para obtener la dirección del número a operar
+                this.getRegisterData(this.address);
+                updateCallback(this.registers, this.operation, false);
+                this.currentStep++;
+                break;
+
+            case 7:
+                //Paso para obtener el número desde la memoria
+                let data = this.fetch();
+                this.getData(data);
+                updateCallback(this.registers, this.operation, false);
+                this.currentStep++;
+                break;
+
+            case 8:
+                //Paso para enviar el dato al registro de entrada
+                this.getInData();
+                updateCallback(this.registers, this.operation, false);
+                this.currentStep++;
+                break;
+
+
+            case 9:
+                // Paso final: Ejecutar la operación aritmética
+                this.execute(this.operation);
+                updateCallback(this.registers, this.operation, false);
+
+                this.currentStep = 0;  // Reiniciar el ciclo para la siguiente instrucción
+                break;
+        }
+    }
+
 }
 
 module.exports = CPU;
