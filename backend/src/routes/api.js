@@ -28,6 +28,17 @@ router.post('/resume-cycle', (req, res) => {
     res.status(200).json({ message: 'Ciclo reanudado' });
 });
 
+// Ruta para ejecutar un solo paso del ciclo
+router.get('/run-step-by-step', (req, res) => {
+    cpu.runStepByStep((registers, operation, finished) => {
+        res.status(200).json({
+            registers: registers,
+            operation: operation,
+            finished: finished
+        });
+    });
+});
+
 // Ruta para llenar la memoria con los datos enviados desde el frontend
 router.post('/fill-memory', (req, res) => {
     const { operation, dato1, dato2 } = req.body;
