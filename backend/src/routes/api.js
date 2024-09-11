@@ -7,11 +7,12 @@ let cpu = new CPU();
 
 // Ruta para iniciar el ciclo con timer
 router.post('/start-cycle', (req, res) => {
-    const intervalTime = req.body.intervalTime || 1000; // Puedes pasar el tiempo de intervalo opcionalmente
+    const intervalTime = req.body.intervalTime || 1000; // Intervalo por defecto de 1000 ms
     cpuController.runCycleWithTimer((registers, operation, finished) => {
         res.json({ registers, operation, finished });
     }, intervalTime);
 });
+
 
 // Ruta para pausar el ciclo
 router.post('/pause-cycle', (req, res) => {
