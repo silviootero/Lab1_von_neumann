@@ -1,10 +1,11 @@
 import React from 'react';
 
-function CPUView({ cpuState }) {
+function CPUView({ cpuState, operation }) {
   return (
-    <div>
-      <h2>CPU</h2>
+    <div className="cpu-view">
+      <h2>Estado de la CPU</h2>
       <pre>{JSON.stringify(cpuState, null, 2)}</pre>
+      <p>Operación decodificada: {operation || 'Ninguna'}</p>
     </div>
   );
 }

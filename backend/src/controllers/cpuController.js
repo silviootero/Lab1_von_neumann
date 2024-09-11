@@ -6,40 +6,21 @@ class CPU {
     constructor() {
         //Se crean todos los registros con los que se trabajará
         this.registers = {
-            accumulator: 0b00000000,
+            accumulator: "00000000",
             programCounter: 0b0000,
-            instructionsRegister: 0b00000000,
-            inRegister: 0b00000000,
-            addresRegister: 0b0000,
-            dataRegister: 0b00000000
+            instructionsRegister: null,
+            inRegister: null,
+            addresRegister: null,
+            dataRegister: null
 
         };
         this.memory = new Memory();
         this.isOperating = true;
-        this.paused = false;  // Estado de pausa
         this.currentStep = 0; // Control del paso actual
         this.operation = null;     // Instrucción actual
         this.address = null;       // Dirección actual
+        this.interval = null;  // Almacenar el ID del intervalo para pausar/reanudar
         
-    }
-    // Método para pausar la CPU
-    pause() {
-        this.paused = true;
-    }
-
-    // Método para reanudar la CPU
-    resume() {
-        this.paused = false;
-        this.runCycle(this.updateCallback);  // Continuar el ciclo
-    }
-
-    // Verificar si la CPU está pausada
-    checkPaused(updateCallback) {
-        if (this.paused) {
-            updateCallback(this.registers, null, false);  // Enviar actualización indicando que está pausada
-            return true;  // Pausada
-        }
-        return false;  // No está pausada
     }
 
 
@@ -124,104 +105,45 @@ class CPU {
     }
 
 
-    // Ciclo principal de ejecución
-    runCycle(updateCallback) {
-        
-        this.updateCallback = updateCallback;  // Guardar el callback
+    // Método para ejecutar el ciclo paso a paso automáticamente usando un timer
+    runCycleWithTimer(updateCallback, intervalTime = 1000) {
+        if (!this.isOperating) return;
 
-        if (!this.isOperating) {
-            updateCallback(this.registers, null, true);  // No continuar si está pausada o terminada
-            return;
+        // Si ya hay un intervalo corriendo, detenerlo antes de iniciar uno nuevo
+        if (this.interval) {
+            clearInterval(this.interval);
         }
 
-        if (this.checkPaused(updateCallback)) return;
-        // Obtener la dirección de la siguiente instrucción
-        this.getAddress();
-        updateCallback(this.registers, null, false);
+        // Iniciar un intervalo que ejecute cada paso automáticamente
+        this.interval = setInterval(() => {
+            this.runStepByStep(updateCallback);
 
+            // Si el ciclo ha terminado (instrucción FINISH)
+            if (!this.isOperating) {
+                clearInterval(this.interval);  // Detener el timer al finalizar el ciclo
+                this.interval = null;  // Reiniciar el estado del intervalo
+            }
+        }, intervalTime);  // Ejecutar cada paso cada 1000ms (1 segundo por defecto)
+    }
 
-        if (this.checkPaused(updateCallback)) return;
-        // Obtener la instrucción desde la memoria
-        let instruction = this.fetch();
-
-
-        if (this.checkPaused(updateCallback)) return;
-        //Se envía la instrucción al registro de datos
-        this.getData(instruction);
-        updateCallback(this.registers, null, false);
-
-
-        if (this.checkPaused(updateCallback)) return;
-        // Guardar la instrucción en el registro de instrucciones
-        this.getInstruction();
-        updateCallback(this.registers, null, false);
-
-        if (this.checkPaused(updateCallback)) return;
-        // Decodificar la instrucción
-        let { operation, address } = this.decode();
-
-        //En caso de instrucción finalizar, se termina el proceso
-        if(operation == 'FINISH'){
-
-            if (this.checkPaused(updateCallback)) return;
-            this.isOperating = false;
-            updateCallback(this.registers, operation, true);  // Enviar actualización final
-            return;
-        }
-
-        //En caso de instrucción de mover a la memoria se ejecutan los pasos para que suceda
-        if(operation == 'MOVE'){
-
-            if (this.checkPaused(updateCallback)) return;
-            this.getRegisterData(address)  //Se envía la dirección en la que se guardará el dato al registro de direcciones
-            updateCallback(this.registers, operation, false);
-
-            if (this.checkPaused(updateCallback)) return;
-            this.store(); //Se guarda el dato
-            updateCallback(this.registers, operation, false);
-            return;
-
-        }
-        
-
-        if (this.checkPaused(updateCallback)) return;
-        //Se envía al registro de direcciones la dirección que se buscará en la memoria
-        this.getRegisterData(address);
-        updateCallback(this.registers, operation, false);
-
-
-        if (this.checkPaused(updateCallback)) return;
-        //Se obtiene el dato de la memoria
-        let dato = this.fetch();
-
-
-        if (this.checkPaused(updateCallback)) return;
-        //Se manda el dato a al registro de datos
-        this.getData(dato);
-        updateCallback(this.registers, operation, false);
-
-
-        if (this.checkPaused(updateCallback)) return;
-        //Se envía el dato desde el registro de datos al registro de entrada
-        this.getInData();
-        updateCallback(this.registers, operation, false);
-
-
-        if (this.checkPaused(updateCallback)) return;
-        //Se ejecuta la operación especificada
-        this.execute(operation);
-        updateCallback(this.registers, operation, false);
-
-
-
-         // Retrasar el siguiente ciclo si no está pausado
-        if (!this.paused) {
-            setTimeout(() => this.runCycle(updateCallback), 1000);  // 1 segundo de retraso
+    // Método para pausar el ciclo (detener el timer)
+    pauseCycle() {
+        if (this.interval) {
+            clearInterval(this.interval);  // Detener el timer
+            this.interval = null;
         }
     }
 
+    // Método para reanudar el ciclo (reiniciar el timer)
+    resumeCycle(updateCallback, intervalTime = 1000) {
+        if (!this.interval && this.isOperating) {
+            this.runCycleWithTimer(updateCallback, intervalTime);
+        }
+    }
+    
 
-    // Método para ejecutar el siguiente paso (paso a paso, subpaso a subpaso)
+
+    // Método para ejecutar paso a paso
     runStepByStep(updateCallback) {
 
         if (!this.isOperating) {
@@ -233,13 +155,19 @@ class CPU {
 
         switch (this.currentStep) {
             case 0:
+                //Se envía el estado inicial al front
+                updateCallback(this.registers, null, false);
+                this.currentStep++;
+                break;
+
+            case 1:
                 // Paso 1: Obtener la dirección de la siguiente instrucción
                 this.getAddress();
                 updateCallback(this.registers, null, false);
                 this.currentStep++;
                 break;
 
-            case 1:
+            case 2:
                 // Paso 2: Obtener la instrucción desde la memoria
                 let instruction = this.fetch();
                 this.getData(instruction);
@@ -247,14 +175,14 @@ class CPU {
                 this.currentStep++;
                 break;
 
-            case 2:
+            case 3:
                 // Paso 3: Guardar la instrucción en el registro de instrucciones
                 this.getInstruction();
                 updateCallback(this.registers, null, false);
                 this.currentStep++;
                 break;
 
-            case 3:
+            case 4:
                 // Paso 4: Decodificar la instrucción
                 let decoded = this.decode();
                 this.operation = decoded.operation;
@@ -266,13 +194,7 @@ class CPU {
                     updateCallback(this.registers, this.operation, true);  // Enviar actualización final
                     return;
                 }
-
-                updateCallback(this.registers, this.operation, false);
-                this.currentStep++;
-                break;
-
-            case 4:
-                // Paso 5: Ejecutar MOVE (subpasos del MOVE separados)
+                //En caso de no ser FINISH, Ejecutar MOVE (subpasos del MOVE separados)
                 if (this.operation === 'MOVE') {
                     // Subpaso 1: Enviar la dirección al registro de direcciones
                     this.getRegisterData(this.address);
@@ -280,9 +202,9 @@ class CPU {
                     this.currentStep++;
                     break;
                 }
-
-                // Si no es MOVE, proceder a la siguiente operación aritmética
-                this.currentStep++;
+                //Se envían los datos y se pasa a la siguiente, omitiendo el otro paso de MOVE
+                updateCallback(this.registers, this.operation, false);
+                this.currentStep = this.currentStep+2;
                 break;
 
             case 5:
@@ -293,9 +215,6 @@ class CPU {
                     this.currentStep = 0;  // Reiniciar el ciclo para la siguiente instrucción
                     break;
                 }
-
-                // Si no es MOVE, proceder a la siguiente operación aritmética
-                this.currentStep++;
                 break;
                   
             // Pasos en caso de ser un número a operar

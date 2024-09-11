@@ -5,30 +5,31 @@ const CPU = require('../controllers/cpuController');
 // Instancia de la CPU
 let cpu = new CPU();
 
-// Ruta para iniciar el ciclo paso a paso
-router.get('/run-cycle', (req, res) => {
-    cpu.runCycle((registers, operation, finished) => {
-        res.status(200).json({
-            registers: registers,
-            operation: operation,  // Enviar la operación decodificada
-            finished: finished
-        });
-    });
+// Ruta para iniciar el ciclo con timer
+router.post('/start-cycle', (req, res) => {
+    const intervalTime = req.body.intervalTime || 1000; // Puedes pasar el tiempo de intervalo opcionalmente
+    cpuController.runCycleWithTimer((registers, operation, finished) => {
+        res.json({ registers, operation, finished });
+    }, intervalTime);
 });
 
 // Ruta para pausar el ciclo
 router.post('/pause-cycle', (req, res) => {
-    cpu.pause();
-    res.status(200).json({ message: 'Ciclo pausado' });
+    cpuController.pauseCycle();
+    res.status(200).send('Ciclo pausado');
 });
 
 // Ruta para reanudar el ciclo
 router.post('/resume-cycle', (req, res) => {
-    cpu.resume();
-    res.status(200).json({ message: 'Ciclo reanudado' });
+    const intervalTime = req.body.intervalTime || 1000;
+    cpuController.resumeCycle((registers, operation, finished) => {
+        res.json({ registers, operation, finished });
+    }, intervalTime);
 });
 
-// Ruta para ejecutar un solo paso del ciclo
+
+
+// Ruta para ejecutar paso a paso el ciclo
 router.get('/run-step-by-step', (req, res) => {
     cpu.runStepByStep((registers, operation, finished) => {
         res.status(200).json({

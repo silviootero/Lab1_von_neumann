@@ -1,14 +1,16 @@
 class Memory {
     constructor(size = 10) {
-        this.memory = new Array(size).fill(0b00000000);
+        this.memory = new Array(size).fill("00000000");
     }
   
     get(address) {
+
         return this.memory[address];
     }
   
     set(address, value) {
-        this.memory[address] = value;
+
+        this.memory[address] = value.toString(2).padStart(8, '0');
     }
   
     // Función para llenar la memoria con datos específicos según la operación
@@ -18,18 +20,18 @@ class Memory {
 
         switch (operation) {
             case 'Suma':
-                this.set(0, 0b00000100); 
-                this.set(1, 0b00000101);
-                this.set(2, 0b01100110);
-                this.set(3, 0b01110000);
+                this.set(0, "00000100"); 
+                this.set(1, "00000101");
+                this.set(2, "01100110");
+                this.set(3, "01110000");
                 this.set(4, binario1);
                 this.set(5, binario2);
                 break;
             case 'Resta':
-                this.set(0, 0b00000100); 
-                this.set(1, 0b00010101);
-                this.set(2, 0b01100110);
-                this.set(3, 0b01110000);
+                this.set(0, "00000100"); 
+                this.set(1, "00010101");
+                this.set(2, "01100110");
+                this.set(3, "01110000");
                 this.set(4, binario1);
                 this.set(5, binario2);
                 break;

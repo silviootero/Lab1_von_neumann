@@ -1,86 +1,65 @@
 import React, { useState } from 'react';
 
-function ControlPanel({ loadProgram, executeStep }) {
-  const [minuendo, setMinuendo] = useState('');
-  const [sustraendo, setSustraendo] = useState('');
-  const [resultado, setResultado] = useState(null);
-  const [options, setOptions] = useState([
-    { label: 'Suma', value: 'Suma' },
-    { label: 'Resta', value: 'Resta' },
-    { label: 'Multiplicación', value: 'Multiplicación' },
-    { label: 'Exponente', value: 'Exponente' },
-  ]);
+function ControlPanel({ fillMemory, startCycle, stepCycle, pauseCycle, resumeCycle }) {
+  const [dato1, setDato1] = useState('');
+  const [dato2, setDato2] = useState('');
+  const [operation, setOperation] = useState('Suma');
+  const [intervalTime, setIntervalTime] = useState(1000); // Intervalo para el temporizador
 
-  const handleMinuendoChange = (event) => {
-    setMinuendo(event.target.value);
+
+  const handleStartCycle = () => {
+    fillMemory(operation, parseInt(dato1), parseInt(dato2));
+    startCycle(intervalTime);  // Iniciar el ciclo completo
   };
 
-  const handleSustraendoChange = (event) => {
-    setSustraendo(event.target.value);
-  };
-
-  const handleRestar = () => {
-    const resultado = parseFloat(minuendo) - parseFloat(sustraendo);
-    setResultado(resultado);
-  };
-
-  const handleLoadProgram = () => {
-    const exampleProgram = [
-      { instruction: 'LOAD', address: 1 },
-      { instruction: 'ADD', address: 2 },
-      { instruction: 'STORE', address: 3 },
-    ];
-    loadProgram(exampleProgram);
-  };
-
-  const addOption = (label, value) => {
-    setOptions([...options, { label, value }]);
+  const handleStepCycle = () => {
+    fillMemory(operation, parseInt(dato1), parseInt(dato2));
+    stepCycle();  // Ejecutar ciclo paso a paso
   };
 
   return (
-    <div>
+    <div className="control-panel">
+      <h2>Panel de Control</h2>
+
       <div>
-        <textarea
-          rows="1"
-          cols="10"
-          placeholder="Ingrese número"
-          value={minuendo}
-          onChange={handleMinuendoChange}
+        <label>Dato 1:</label>
+        <input
+          type="number"
+          value={dato1}
+          onChange={(e) => setDato1(e.target.value)}
         />
       </div>
+
       <div>
-        <textarea
-          rows="1"
-          cols="10"
-          placeholder="Ingrese número"
-          value={sustraendo}
-          onChange={handleSustraendoChange}
+        <label>Dato 2:</label>
+        <input
+          type="number"
+          value={dato2}
+          onChange={(e) => setDato2(e.target.value)}
         />
       </div>
+
       <div>
-        <label htmlFor="operaciones" className="text-center">
-          Seleccione la operación:
-        </label>
-        <select id="sel" required>
-          {options.map((option, index) => (
-            <option key={index} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+        <label>Operación:</label>
+        <select value={operation} onChange={(e) => setOperation(e.target.value)}>
+          <option value="Suma">Suma</option>
+          <option value="Resta">Resta</option>
         </select>
       </div>
       <div>
-        <button onClick={handleRestar}>Ejecutar</button>
+        <label>Intervalo de tiempo (ms):</label>
+          <input
+            type="number"
+            value={intervalTime}
+            onChange={(e) => setIntervalTime(parseInt(e.target.value))}
+          />
       </div>
+
       <div>
-        <button onClick={handleRestar}>Paso a paso</button>
-      </div>
-      <div>
-        {resultado !== null && <p>Resultado de la resta: {resultado}</p>}
-      </div>
-      <div>
-        <button onClick={handleLoadProgram}>Load Program</button>
-        <button onClick={executeStep}>Execute Step</button>
+        <button onClick={handleStartCycle}>Iniciar Ciclo</button>
+        <button onClick={handleStepCycle}>Ejecutar Paso a Paso</button>
+        <button onClick={pauseCycle}>Pausar Ciclo</button>
+        <button onClick={resumeCycle}>Reanudar Ciclo</button>
       </div>
     </div>
   );
