@@ -1,13 +1,19 @@
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  margin: 0; /* Elimina el margen predeterminado del cuerpo del documento para evitar espacios no deseados alrededor de la página. */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; 
+  /* Define una lista de fuentes preferidas para el texto en la aplicación, empezando con fuentes del sistema y 
+  continuando con alternativas populares para asegurar consistencia en diferentes sistemas operativos. */
+  
+  -webkit-font-smoothing: antialiased; /* Mejora la apariencia de las fuentes en navegadores basados en WebKit, 
+  como Chrome y Safari, al suavizar los bordes de las letras. */
+  
+  -moz-osx-font-smoothing: grayscale; /* Mejora la apariencia de las fuentes en sistemas operativos Mac en navegadores 
+  basados en Mozilla, al aplicar un suavizado en escala de grises. */
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace; 
+  /* Especifica una lista de fuentes monoespaciadas para el texto de código, asegurando que cada carácter ocupe 
+  el mismo espacio horizontal, lo que es ideal para la legibilidad de código. */
 }
